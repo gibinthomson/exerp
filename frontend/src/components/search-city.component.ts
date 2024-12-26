@@ -1,11 +1,10 @@
-import { Options, Vue } from 'vue-class-component';
+import store from "@/store";
+import { Options, Vue } from "vue-class-component";
 
 @Options({
-  props: {
-  }
+  props: {},
 })
 export default class SearchCity extends Vue {
-
   selectedPlace: { lat: number; lng: number } | null = null;
 
   placeChanged(place: any) {
@@ -13,7 +12,13 @@ export default class SearchCity extends Vue {
       lat: place.geometry.location.lat(),
       lng: place.geometry.location.lng(),
     };
+    this.updatePlaceLocation({
+      lat: place.geometry.location.lat(),
+      lng: place.geometry.location.lng(),
+    });
   }
 
-
+  updatePlaceLocation(location: any) {
+    store.dispatch("updatePlaceLocation", location);
+  }
 }

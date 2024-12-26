@@ -1,26 +1,39 @@
-import WeatherService from '@/services/weather-service.service';
-import { Options, Vue } from 'vue-class-component';
-import { Inject } from 'vue-property-decorator';
+import WeatherService from "@/services/weather-service.service";
+import store from "@/store";
+import { Options, Vue } from "vue-class-component";
+import { Inject, Watch } from "vue-property-decorator";
 
 @Options({
-  props: {
-  }
+  props: {},
 })
 export default class WeatherForecast extends Vue {
-
-  @Inject('weatherService')
+  @Inject("weatherService")
   public weatherService!: WeatherService;
-
-   
-  mounted() {
-    // TODO - use the latitude and longitude from the search city component
-    // TODO - display the weather forecast in the template
-    // TODO - Error handling, if the API call fails we should display an error message
-    this.weatherService.getWeatherForecast(52.52, 13.419998).then((res) => {
-      console.log(res);
-    });
+  get placeLocation() {
+    return store.state.placeLocation;
   }
+  loading = false;
+  weatherData: any = null;
+  dataError = false;
 
+  @Watch("placeLocation")
+  watchPlaceLocation(newValue: { lat: number; lng: number }) {
+    if (newValue) {
+      this.loading = true;
+      this.weatherService
+        .getWeatherForecast(newValue.lat, newValue.lng)
+        .then((res) => {
+          this.weatherData = res.result;
+          if (res.result.status === "nok") this.dataError = true;
+          else this.dataError = false;
+        })
+        .catch((err) => {
+          this.dataError = true;
+          console.error("Error fetching weather data:", err);
+        })
+        .finally(() => {
+          this.loading = false;
+        });
+    }
+  }
 }
-
-
