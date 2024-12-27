@@ -1,0 +1,139 @@
+def staging_branch = 'develop'
+def commit_message_prefix = 'automated version up commit'
+
+pipeline {
+    // add agent
+    agent any
+
+    environment {
+        NODE_PATH = tool(name: 'nodejs-18.16.1')
+    }
+
+    stages {
+        stage('Setup parameters') {
+            steps {
+                script {
+                    properties([
+                         parameters([
+                            string(
+                                name: 'branch',
+                                defaultValue: 'develop',
+                                trim: true,
+                                description: 'The branch from where we need to build'
+                            ),
+                            choice(
+                                name: 'deploy',
+                                choices: [false, true],
+                                description: 'Should deploy after build'
+                            )
+                        ])
+                    ])
+                }
+            }
+        }
+
+        stage('Initialize') {
+            steps {
+                script {
+                    commit_id = checkout(scm).GIT_COMMIT
+                    sh "echo ${commit_id} > COMMIT_ID"
+                }
+            }
+        }
+
+        stage('yarn install') {
+            options {
+                timeout(time: 15, unit: 'MINUTES')
+            }
+            steps {
+                script {
+                    sshagent(credentials: ['ssh-credentials']) {
+                        sh 'npm install --global yarn@1.22.19'
+                        sh 'yarn --version'
+                        sh 'yarn'
+                    }
+                }
+            }
+        }
+
+        stage('version up') {
+            steps {
+                script {
+                    sshagent(credentials: ['ssh-credentials']) {
+                        sh 'git reset HEAD --hard'
+                        sh "git fetch origin ${branch_name}"
+                        sh "git checkout ${branch_name}"
+                        sh 'npm run versionup'
+                        sh 'git status && git add .'
+                        sh "git commit --no-verify -m '[${commit_message_prefix}] patch'"
+                        sh "git push --force --no-verify origin ${branch_name}"
+                        sh 'git reset HEAD --hard'
+                        sh "git checkout ${branch_name}"
+                        sh 'git status'
+                    }
+                }
+            }
+        }
+
+        stage('Build application') {
+            options {
+                timeout(time: 60, unit: 'MINUTES')
+            }
+
+            steps {
+                script {
+                    if (params.branch === 'develop') {
+                        // use staging env
+                        sh 'yarn build'
+                    }
+                    else if (params.branch === 'main') {
+                        sh 'VUE_APP_BACKEND_API_URL=/api yarn build'
+                    }
+                }
+            }
+        }
+        stage('typescript check') {
+            steps {
+                script {
+                    sh 'yarn tsc'
+                }
+            }
+        }
+
+        stage('lint check') {
+            steps {
+                script {
+                    sh 'yarn lint'
+                }
+            }
+        }
+
+        stage('unit test check') {
+            steps {
+                script {
+                    sh 'set -o pipefail; yarn test '
+                }
+            }
+        }
+        stage('Compress and deploy ') {
+            steps {
+                script {
+                    // check for environment as well 
+                    // as S3 bucketchanges deplending on develop or main
+
+                    if (params.deploy) {
+                        // build can be compressed to gzip or brotlie for optimization
+                        //copy the build to deployent AWS server
+
+                        //store the build as artifacts in S3 bucket
+                    }
+                    else {
+                        // build can be compressed to gzip or brotlie for optimization
+
+                        // store the build as artifacts in S3 bucket
+                    }
+                }
+            }
+        }
+    }
+}

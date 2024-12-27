@@ -6,7 +6,8 @@
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
-    "versionup": "sh ./scripts/version-up.sh"
+    "versionup": "sh ./scripts/version-up.sh",
+    "test":"cypress"
   },
   "dependencies": {
     "@fawmi/vue-google-maps": "^0.9.79",
