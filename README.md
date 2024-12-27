@@ -10,7 +10,7 @@ Search any town / city in the world to get the weather forcast
 - The location can be chosen either by searching for a city name.
 - Proper error and loading status are displayed for users.
 - Ensured the commits are atomic and meaningful, and the code is well-formatted and easy to read.
-- Styled the compoents using tailwindcss.
+- Styled the components using tailwindcss.
 - Dockerised  the entire application.
  To run 
 ```
@@ -18,7 +18,7 @@ docker compose up --build
 ```
 and navigate to http://localhost:8080
 - Created Jenkins CI/CD pipeline to run the tests and deploy the application.
-- Integrated Verson Up feature to enhance developer experience .
+- Integrated Version Up feature to enhance developer experience .
 
 
 ## Screenshot
